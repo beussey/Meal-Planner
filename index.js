@@ -89,7 +89,7 @@ function categorizeIngredient(name) {
     "poulet","boeuf","porc","dinde",
     "veau","agneau","canard",
     "lard","saucisse","bacon","steak",
-    "epaule","jaret","lardon","jambon","chorizo","gite de bœuf","jarret de bœuf"
+    "epaule","jaret","lardon","jambon","chorizo","gite de bœuf","jarret de bœuf","gite"
   ];
 
   const fish = [
