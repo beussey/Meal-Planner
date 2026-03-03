@@ -200,12 +200,12 @@ const vegetarianRecipes = seasonal.filter(r => r.category === "vegetarian");
     if (recipe.prep_time > 100) veryLongCount++;
   }
 
- // ===== INGREDIENT FORCÉ =====
+// ===== INGREDIENT FORCÉ =====
 let forcedRecipeId = null;
 
 if (ingredientsToUse.length > 0) {
 
-  const forced = seasonal.find(recipe =>
+  const matchingRecipes = seasonal.filter(recipe =>
     recipe.ingredients.some(ing =>
       ingredientsToUse.some(userIng =>
         containsIngredient(
@@ -216,7 +216,11 @@ if (ingredientsToUse.length > 0) {
     )
   );
 
-  if (forced) {
+  if (matchingRecipes.length > 0) {
+
+    const shuffledMatches = shuffle(matchingRecipes);
+    const forced = shuffledMatches[0];
+
     addRecipe(forced);
     forcedRecipeId = forced.id;
   }
