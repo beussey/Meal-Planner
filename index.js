@@ -155,10 +155,10 @@ app.get("/generate-week", (req, res) => {
 
   // ===== FILTRAGE SAISON + ROTATION =====
   const seasonal = allRecipes
-    .filter(r =>
-      r.season_months.includes(currentMonth) &&
-      r.contains_mussels === false
-    )
+  .filter(r =>
+    (ignoreSeason || r.season_months.includes(currentMonth)) &&
+    r.contains_mussels === false
+  )
     .sort((a, b) => (a.lastUsed || 0) - (b.lastUsed || 0));
 
   // ===== QUOTAS DYNAMIQUES =====
