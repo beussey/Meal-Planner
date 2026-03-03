@@ -41,69 +41,83 @@ function normalize(str) {
   return str
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")  // supprime accents
+    .replace(/-/g, " ")               // uniformise tirets
+    .replace(/[^\w\s]/g, "")          // retire ponctuation
+    .replace(/\s+/g, " ")             // espaces multiples
     .trim();
 }
 
-// Supprime pluriel simple
+// mots à ne JAMAIS singulariser
+const invariantWords = new Set([
+  "mais",
+  "pois",
+  "noix",
+  "riz",
+  "houmous"
+]);
+
+// gestion pluriel plus propre
 function singularize(word) {
+  if (invariantWords.has(word)) return word;
+
   if (word.endsWith("aux")) return word.slice(0, -3) + "al";
-  if (word.endsWith("s") || word.endsWith("x")) return word.slice(0, -1);
+  if (word.endsWith("eaux")) return word.slice(0, -1); // ex: poireaux
+  if (word.endsWith("s") && word.length > 3) return word.slice(0, -1);
+  if (word.endsWith("x") && word.length > 3) return word.slice(0, -1);
+
   return word;
 }
 
 function prepare(str) {
-  const normalized = normalize(str);
-  const words = normalized.split(/\s+/).map(singularize);
-  return words.join(" ");
+  return normalize(str)
+    .split(" ")
+    .map(singularize)
+    .join(" ");
 }
 
-function containsIngredient(preparedName, baseWord) {
-  const preparedBase = prepare(baseWord);
-
-  return (
-    preparedName === preparedBase ||
-    preparedName.startsWith(preparedBase + " ") ||
-    preparedName.includes(" " + preparedBase + " ") ||
-    preparedName.endsWith(" " + preparedBase)
-  );
+function containsIngredient(preparedName, preparedBase) {
+  const regex = new RegExp(`\\b${preparedBase}\\b`);
+  return regex.test(preparedName);
 }
+// ===== LISTES PRÉPARÉES UNE FOIS =====
 
+const vegetables = [
+  "carotte","poireau","citron","chou","courgette","epinard",
+  "panais","celeri","oignon","echalote","ail","poivron",
+  "pomme de terre","chou fleur","aubergine","tomate",
+  "concombre","fenouil","butternut","potimarron",
+  "champignon","salade","haricot vert","brocoli",
+  "radis","navet","blette","asperge","artichaut",
+  "betterave","endive","petit pois","gingembre",
+  "patate douce","courge","avocat","pois chiche"
+].map(prepare);
+
+const meats = [
+  "poulet","boeuf","porc","dinde",
+  "veau","agneau","canard",
+  "lard","saucisse","bacon","steak",
+  "epaule","jarret","lardon","jambon",
+  "chorizo","gite de boeuf","jarret de boeuf","gite"
+].map(prepare);
+
+const fish = [
+  "saumon","cabillaud","colin","truite",
+  "thon","merlu","maquereau","sardine",
+  "crevette"
+].map(prepare);
+
+const dairy = [
+  "lait","beurre","fromage","ricotta",
+  "parmesan","creme","yaourt",
+  "mozzarella","chevre","comte",
+  "cream cheese","reblochon","burrata",
+  "feta","cheddar"
+].map(prepare);
 // ===== CATÉGORISATION =====
 function categorizeIngredient(name) {
 
   const prepared = prepare(name);
-
-  const vegetables = [
-    "carotte","poireau","citron","chou","courgette","epinard",
-    "panais","celeri","oignon","echalote","ail","poivron",
-    "pomme de terre","chou fleur","aubergine","tomate",
-    "concombre","fenouil","butternut","potimarron",
-    "champignon","salade","haricot vert","brocoli",
-    "radis","navet","blette","asperge","artichaut",
-    "betterave","endive","petit pois","gingembre",
-    "patate douce","courge","avocat","pois chiche"
-  ];
-
-  const meats = [
-    "poulet","boeuf","porc","dinde",
-    "veau","agneau","canard",
-    "lard","saucisse","bacon","steak",
-    "epaule","jaret","lardon","jambon","chorizo","gite de bœuf","jarret de bœuf","gite"
-  ];
-
-  const fish = [
-    "saumon","cabillaud","colin","truite",
-    "thon","merlu","maquereau","sardine",
-    "crevette"
-  ];
-
-  const dairy = [
-    "lait","beurre","fromage","ricotta",
-    "parmesan","creme","yaourt",
-    "mozzarella","chevre","comte",
-    "cream cheese","reblochon","burrata","feta","féta","cheddar"
-  ];
 
   if (vegetables.some(v => containsIngredient(prepared, v))) return "🥕 Légumes";
   if (meats.some(m => containsIngredient(prepared, m))) return "🥩 Viande";
@@ -155,9 +169,9 @@ app.get("/generate-week", (req, res) => {
 
   let selected = [];
 
-  const meats = seasonal.filter(r => r.category === "meat");
-  const fish = seasonal.filter(r => r.category === "fish");
-  const vegetarian = seasonal.filter(r => r.category === "vegetarian");
+ const meatRecipes = seasonal.filter(r => r.category === "meat");
+const fishRecipes = seasonal.filter(r => r.category === "fish");
+const vegetarianRecipes = seasonal.filter(r => r.category === "vegetarian");
 
   let meatCount = 0;
   let fishCount = 0;
@@ -185,39 +199,42 @@ app.get("/generate-week", (req, res) => {
     if (recipe.prep_time > 100) veryLongCount++;
   }
 
-  // ===== INGREDIENT FORCÉ =====
-  // ===== INGREDIENT FORCÉ =====
-  let forcedRecipeId = null;
+ // ===== INGREDIENT FORCÉ =====
+let forcedRecipeId = null;
 
-  if (ingredientsToUse.length > 0) {
-    const forced = seasonal.find(recipe =>
-      recipe.ingredients.some(ing =>
-        ingredientsToUse.some(userIng =>
-          ing.name.toLowerCase().includes(userIng)
+if (ingredientsToUse.length > 0) {
+
+  const forced = seasonal.find(recipe =>
+    recipe.ingredients.some(ing =>
+      ingredientsToUse.some(userIng =>
+        containsIngredient(
+          prepare(ing.name),
+          prepare(userIng)
         )
       )
-    );
+    )
+  );
 
-    if (forced) {
-      addRecipe(forced);
-      forcedRecipeId = forced.id;
-    }
+  if (forced) {
+    addRecipe(forced);
+    forcedRecipeId = forced.id;
   }
+}
 
   // ===== QUOTAS =====
-  shuffle(meats).forEach(r => {
+  shuffle(meatRecipes).forEach(r => {
     if (meatCount < meatTarget && !selected.some(s => s.id === r.id)) {
       addRecipe(r);
     }
   });
 
-  shuffle(fish).forEach(r => {
+  shuffle(fishRecipes).forEach(r => {
     if (fishCount < fishTarget && !selected.some(s => s.id === r.id)) {
       addRecipe(r);
     }
   });
 
-  shuffle(vegetarian).forEach(r => {
+  shuffle(vegetarianRecipes).forEach(r => {
     if (vegCount < vegetarianTarget && !selected.some(s => s.id === r.id)) {
       addRecipe(r);
     }
