@@ -11,6 +11,7 @@ async function generateWeek() {
   );
 
   const data = await response.json();
+  updateSeasonBadge(data.ignoreSeason);
 
   currentRecipes = data.recipes;
 
@@ -149,7 +150,21 @@ function displayRecipes(recipes) {
 
   });
 }
+function updateSeasonBadge(ignoreSeason) {
 
+  const existing = document.getElementById("seasonBadge");
+  if (existing) existing.remove();
+
+  if (!ignoreSeason) return;
+
+  const badge = document.createElement("div");
+  badge.id = "seasonBadge";
+  badge.className = "alert alert-success mt-3";
+  badge.textContent = "🌱 Saison ignorée — toutes les recettes sont disponibles";
+
+  const container = document.querySelector(".container");
+  container.insertBefore(badge, container.children[1]);
+}
 function updateShoppingList() {
   const shopping = {};
 
