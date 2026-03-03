@@ -2,6 +2,7 @@ let currentRecipes = [];
 
 async function generateWeek() {
   const people = document.getElementById("people").value;
+  const ignoreSeason = req.query.ignoreSeason === "true";
   const ingredients = document.getElementById("ingredientsToUse").value;
   const ignoreSeason = document.getElementById("ignoreSeason").checked;
 
