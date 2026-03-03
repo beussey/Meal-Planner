@@ -3,9 +3,10 @@ let currentRecipes = [];
 async function generateWeek() {
   const people = document.getElementById("people").value;
   const ingredients = document.getElementById("ingredientsToUse").value;
+  const ignoreSeason = document.getElementById("ignoreSeason").checked;
 
   const response = await fetch(
-    `/generate-week?people=${people}&use=${encodeURIComponent(ingredients)}`
+    `/generate-week?people=${people}&use=${encodeURIComponent(ingredients)}&ignoreSeason=${ignoreSeason}`
   );
 
   const data = await response.json();
