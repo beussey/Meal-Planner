@@ -344,19 +344,20 @@ if (ingredientsToUse.length > 0) {
   );
 
   res.json({
-    recipes: selected.map(r => ({
-      id: r.id,
-      name: r.name,
-      prep_time: r.prep_time,
-      category: r.category,
-      steps: r.steps,
-      ingredients: r.ingredients,
-      adjustedServings: r.adjustedServings,
-      isBatchCooking: r.isBatchCooking,
-      isForced: r.isForced
-    })),
-    shoppingList
-  });
+  recipes: selected.map(r => ({
+    id: r.id,
+    name: r.name,
+    prep_time: r.prep_time,
+    category: r.category,
+    steps: r.steps,
+    ingredients: r.ingredients,
+    adjustedServings: r.adjustedServings,
+    isBatchCooking: r.isBatchCooking,
+    isForced: r.isForced
+  })),
+  shoppingList,
+  ignoreSeason   // 👈 on ajoute ça
+});
 
 });
 
