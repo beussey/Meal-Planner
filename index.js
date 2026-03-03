@@ -200,12 +200,12 @@ const vegetarianRecipes = seasonal.filter(r => r.category === "vegetarian");
     if (recipe.prep_time > 100) veryLongCount++;
   }
 
-// ===== INGREDIENT FORCÉ =====
+// ===== INGREDIENT FORCÉ INTELLIGENT =====
 let forcedRecipeId = null;
 
 if (ingredientsToUse.length > 0) {
 
-  const matchingRecipes = seasonal.filter(recipe =>
+  let matchingRecipes = seasonal.filter(recipe =>
     recipe.ingredients.some(ing =>
       ingredientsToUse.some(userIng =>
         containsIngredient(
@@ -216,10 +216,21 @@ if (ingredientsToUse.length > 0) {
     )
   );
 
+  // On évite la semaine précédente
+  matchingRecipes = matchingRecipes.filter(r =>
+    !lastGeneration.includes(r.id)
+  );
+
   if (matchingRecipes.length > 0) {
 
-    const shuffledMatches = shuffle(matchingRecipes);
-    const forced = shuffledMatches[0];
+    // Rotation naturelle
+    matchingRecipes.sort((a, b) => a.lastUsed - b.lastUsed);
+
+    // On prend les 5 moins récentes
+    const selectionPool = matchingRecipes.slice(0, 5);
+
+    // Random intelligent
+    const forced = shuffle(selectionPool)[0];
 
     addRecipe(forced);
     forcedRecipeId = forced.id;
