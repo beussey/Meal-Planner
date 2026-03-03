@@ -137,6 +137,8 @@ app.get("/generate-week", (req, res) => {
   const people = parseInt(req.query.people) || 2;
   const ratio = people / 2;
 
+  const ignoreSeason = req.query.ignoreSeason === "true";  // 👈 AJOUTER ICI
+
   const ingredientsToUse = (req.query.use || "")
     .toLowerCase()
     .split(",")
