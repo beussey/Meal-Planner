@@ -340,14 +340,14 @@ if (ingredientsToUse.length > 0) {
   });
 
   // ===== UPDATE LAST USED =====
-  const now = Date.now();
+  const baseTime = Date.now();
 
-  selected.forEach(sel => {
-    const index = allRecipes.findIndex(r => r.id === sel.id);
-    if (index !== -1) {
-      allRecipes[index].lastUsed = now;
-    }
-  });
+selected.forEach((sel, i) => {
+  const index = allRecipes.findIndex(r => r.id === sel.id);
+  if (index !== -1) {
+    allRecipes[index].lastUsed = baseTime + (i * 1000);
+  }
+});
 
   fs.writeFileSync(
     path.join(__dirname, "data", "recipes.json"),
