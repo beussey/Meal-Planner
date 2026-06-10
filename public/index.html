@@ -68,6 +68,11 @@
           Générer
         </button>
       </div>
+      <div class="col-md-2 d-flex align-items-end">
+  <button onclick="saveSelectedRecipes()" class="btn btn-success w-100">
+    💾 Sauvegarder
+  </button>
+</div>
 
     </div>
 
@@ -76,6 +81,12 @@
       <div class="col-lg-7">
         <h2 class="mb-3">Recipes</h2>
         <div id="recipes"></div>
+        <div class="row mt-5">
+  <div class="col-12">
+    <h2 class="mb-3">📂 Mes listes sauvegardées</h2>
+    <div id="saved-lists"></div>
+  </div>
+</div>
       </div>
 
       <!-- SHOPPING LIST -->
