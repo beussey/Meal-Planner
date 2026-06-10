@@ -371,30 +371,94 @@ async function loadSavedLists() {
     recipesTitle.textContent = "🍽️ Recettes";
     colRecipes.appendChild(recipesTitle);
 
-    list.recipes.forEach(r => {
-      const toggle = document.createElement("details");
-      toggle.className = "mb-2 border rounded p-2";
+   list.recipes.forEach(r => {
+  const toggle = document.createElement("details");
+  toggle.className = "mb-2 border rounded p-2";
 
-      const summary = document.createElement("summary");
-      summary.className = "fw-semibold";
-      summary.textContent = `${r.name} — ${r.prep_time} min`;
-      toggle.appendChild(summary);
+  const summary = document.createElement("summary");
+  summary.className = "fw-semibold";
+  summary.textContent = `${r.name} — ${r.prep_time} min`;
+  toggle.appendChild(summary);
 
-      if (Array.isArray(r.ingredients)) {
-        const ingTitle = document.createElement("p");
-        ingTitle.className = "mt-2 mb-1 text-muted small";
-        ingTitle.textContent = "Ingrédients :";
-        toggle.appendChild(ingTitle);
+  // ===== CHECKBOX EXCLUSION =====
+  const excludeDiv = document.createElement("div");
+  excludeDiv.className = "form-check mt-2 mb-1";
 
-        const ingList = document.createElement("ul");
-        ingList.className = "small";
-        r.ingredients.forEach(ing => {
-          const li = document.createElement("li");
-          li.textContent = `${ing.name} : ${Math.round(ing.quantity * 100) / 100} ${ing.unit}`;
-          ingList.appendChild(li);
-        });
-        toggle.appendChild(ingList);
-      }
+  const excludeCb = document.createElement("input");
+  excludeCb.type = "checkbox";
+  excludeCb.className = "form-check-input";
+
+  const excludeLbl = document.createElement("label");
+  excludeLbl.className = "form-check-label text-danger small";
+  excludeLbl.textContent = "Exclure de la liste de courses";
+
+  excludeCb.addEventListener("change", () => {
+    // Recalcule la shopping list en excluant les recettes cochées
+    const excludedIds = Array.from(
+      section.querySelectorAll(".exclude-saved-cb:checked")
+    ).map(cb => cb.dataset.recipeId);
+
+    const includedRecipes = list.recipes.filter(
+      rec => !excludedIds.includes(rec.id)
+    );
+
+    const newShopping = {};
+    includedRecipes.forEach(rec => {
+      rec.ingredients.forEach(ing => {
+        const cat = ing.category || "🧂 Épicerie";
+        if (!newShopping[cat]) newShopping[cat] = {};
+        if (!newShopping[cat][ing.name]) {
+          newShopping[cat][ing.name] = { quantity: 0, unit: ing.unit };
+        }
+        newShopping[cat][ing.name].quantity += ing.quantity;
+      });
+    });
+
+    // Redessine uniquement la colonne shopping de cette liste
+    rebuildShoppingCol(colShopping, newShopping);
+  });
+
+  excludeCb.className = "form-check-input exclude-saved-cb";
+  excludeCb.dataset.recipeId = r.id;
+
+  excludeDiv.appendChild(excludeCb);
+  excludeDiv.appendChild(excludeLbl);
+  toggle.appendChild(excludeDiv);
+
+  if (Array.isArray(r.ingredients)) {
+    const ingTitle = document.createElement("p");
+    ingTitle.className = "mt-2 mb-1 text-muted small";
+    ingTitle.textContent = "Ingrédients :";
+    toggle.appendChild(ingTitle);
+
+    const ingList = document.createElement("ul");
+    ingList.className = "small";
+    r.ingredients.forEach(ing => {
+      const li = document.createElement("li");
+      li.textContent = `${ing.name} : ${Math.round(ing.quantity * 100) / 100} ${ing.unit}`;
+      ingList.appendChild(li);
+    });
+    toggle.appendChild(ingList);
+  }
+
+  if (Array.isArray(r.steps)) {
+    const stepsTitle = document.createElement("p");
+    stepsTitle.className = "mt-2 mb-1 text-muted small";
+    stepsTitle.textContent = "Préparation :";
+    toggle.appendChild(stepsTitle);
+
+    const ol = document.createElement("ol");
+    ol.className = "small";
+    r.steps.forEach(step => {
+      const li = document.createElement("li");
+      li.textContent = step;
+      ol.appendChild(li);
+    });
+    toggle.appendChild(ol);
+  }
+
+  colRecipes.appendChild(toggle);
+});
 
       if (Array.isArray(r.steps)) {
         const stepsTitle = document.createElement("p");
