@@ -388,19 +388,15 @@ app.get("/saved-lists", (req, res) => {
 });
 
 // ===== SAUVEGARDE D'UNE LISTE =====
-app.post("/save-list", express.json(), (req, res) => {
-  const { recipes } = req.body;
-  if (!recipes || recipes.length === 0) {
-    return res.status(400).json({ error: "Aucune recette sélectionnée" });
+app.post("/save-list-full", express.json(), (req, res) => {
+  const lists = req.body;
+  if (!Array.isArray(lists)) {
+    return res.status(400).json({ error: "Format invalide" });
   }
-
   const filePath = path.join(__dirname, "data", "saved_lists.json");
-  let lists = [];
-  try {
-    lists = JSON.parse(fs.readFileSync(filePath, "utf8"));
-  } catch {
-    lists = [];
-  }
+  fs.writeFileSync(filePath, JSON.stringify(lists, null, 2));
+  res.json({ success: true });
+});
 
   // Purge des listes > 2 semaines
   const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
