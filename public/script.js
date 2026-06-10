@@ -277,9 +277,39 @@ async function saveSelectedRecipes() {
   const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.recipeId);
   const recipesToSave = currentRecipes.filter(r => selectedIds.includes(r.id));
 
-  // Calcul de la shopping list pour ces recettes uniquement
+  // Récupère les listes existantes
+  const res = await fetch("/saved-lists");
+  let lists = await res.json();
+
+  const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  lists = lists.filter(l => l.savedAt > twoWeeksAgo);
+
+  // Date du jour comme clé (format YYYY-MM-DD)
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  // Cherche une liste du jour existante
+  let todayList = lists.find(l => l.dayKey === todayKey);
+
+  if (todayList) {
+    // Ajoute sans doublons
+    recipesToSave.forEach(r => {
+      if (!todayList.recipes.some(existing => existing.id === r.id)) {
+        todayList.recipes.push(r);
+      }
+    });
+  } else {
+    todayList = {
+      id: Date.now().toString(),
+      savedAt: Date.now(),
+      dayKey: todayKey,
+      recipes: recipesToSave
+    };
+    lists.push(todayList);
+  }
+
+  // Recalcule la shopping list complète de cette liste
   const shopping = {};
-  recipesToSave.forEach(recipe => {
+  todayList.recipes.forEach(recipe => {
     recipe.ingredients.forEach(ing => {
       const cat = ing.category || "🧂 Épicerie";
       if (!shopping[cat]) shopping[cat] = {};
@@ -289,14 +319,15 @@ async function saveSelectedRecipes() {
       shopping[cat][ing.name].quantity += ing.quantity;
     });
   });
+  todayList.shopping = shopping;
 
-  await fetch("/save-list", {
+  await fetch("/save-list-full", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ recipes: recipesToSave, shopping })
+    body: JSON.stringify(lists)
   });
 
-  alert(`✅ ${recipesToSave.length} recette(s) sauvegardée(s) !`);
+  alert(`✅ ${recipesToSave.length} recette(s) ajoutée(s) à la liste du jour !`);
   loadSavedLists();
 }
 
@@ -322,57 +353,23 @@ async function loadSavedLists() {
     const section = document.createElement("div");
     section.className = "mb-5 border rounded p-3";
 
-    // Titre
-    const header = document.createElement("h5");
+    const header = document.createElement("h4");
+    header.className = "mb-3";
     header.textContent = `📅 Liste du ${date}`;
     section.appendChild(header);
 
-    // ===== SHOPPING LIST =====
-    const shopToggle = document.createElement("details");
-    shopToggle.className = "mb-3";
-    const shopSummary = document.createElement("summary");
-    shopSummary.className = "fw-bold text-success mb-2";
-    shopSummary.textContent = "🛒 Liste de courses";
-    shopToggle.appendChild(shopSummary);
+    // Ligne en deux colonnes : recettes | shopping
+    const row = document.createElement("div");
+    row.className = "row";
 
-    if (list.shopping) {
-      Object.entries(list.shopping).forEach(([cat, items]) => {
-        const catTitle = document.createElement("p");
-        catTitle.className = "fw-semibold mt-2 mb-1";
-        catTitle.textContent = cat;
-        shopToggle.appendChild(catTitle);
+    // ===== COLONNE RECETTES =====
+    const colRecipes = document.createElement("div");
+    colRecipes.className = "col-md-7";
 
-        Object.entries(items).forEach(([name, data]) => {
-          const row = document.createElement("div");
-          row.className = "form-check ms-2";
-
-          const cb = document.createElement("input");
-          cb.type = "checkbox";
-          cb.className = "form-check-input";
-
-          const lbl = document.createElement("label");
-          lbl.className = "form-check-label";
-          lbl.textContent = `${name} : ${Math.round(data.quantity * 100) / 100} ${data.unit}`;
-
-          cb.addEventListener("change", () => {
-            lbl.style.color = cb.checked ? "#bbb" : "";
-            lbl.style.textDecoration = cb.checked ? "line-through" : "";
-          });
-
-          row.appendChild(cb);
-          row.appendChild(lbl);
-          shopToggle.appendChild(row);
-        });
-      });
-    }
-
-    section.appendChild(shopToggle);
-
-    // ===== RECETTES =====
-    const recipesTitle = document.createElement("p");
-    recipesTitle.className = "fw-bold mt-3 mb-2";
+    const recipesTitle = document.createElement("h6");
+    recipesTitle.className = "fw-bold mb-2";
     recipesTitle.textContent = "🍽️ Recettes";
-    section.appendChild(recipesTitle);
+    colRecipes.appendChild(recipesTitle);
 
     list.recipes.forEach(r => {
       const toggle = document.createElement("details");
@@ -383,14 +380,14 @@ async function loadSavedLists() {
       summary.textContent = `${r.name} — ${r.prep_time} min`;
       toggle.appendChild(summary);
 
-      // Ingrédients de la recette
       if (Array.isArray(r.ingredients)) {
         const ingTitle = document.createElement("p");
-        ingTitle.className = "mt-2 mb-1 text-muted";
+        ingTitle.className = "mt-2 mb-1 text-muted small";
         ingTitle.textContent = "Ingrédients :";
         toggle.appendChild(ingTitle);
 
         const ingList = document.createElement("ul");
+        ingList.className = "small";
         r.ingredients.forEach(ing => {
           const li = document.createElement("li");
           li.textContent = `${ing.name} : ${Math.round(ing.quantity * 100) / 100} ${ing.unit}`;
@@ -399,14 +396,14 @@ async function loadSavedLists() {
         toggle.appendChild(ingList);
       }
 
-      // Étapes
       if (Array.isArray(r.steps)) {
         const stepsTitle = document.createElement("p");
-        stepsTitle.className = "mt-2 mb-1 text-muted";
+        stepsTitle.className = "mt-2 mb-1 text-muted small";
         stepsTitle.textContent = "Préparation :";
         toggle.appendChild(stepsTitle);
 
         const ol = document.createElement("ol");
+        ol.className = "small";
         r.steps.forEach(step => {
           const li = document.createElement("li");
           li.textContent = step;
@@ -415,14 +412,58 @@ async function loadSavedLists() {
         toggle.appendChild(ol);
       }
 
-      section.appendChild(toggle);
+      colRecipes.appendChild(toggle);
     });
 
+    // ===== COLONNE SHOPPING =====
+    const colShopping = document.createElement("div");
+    colShopping.className = "col-md-5";
+
+    const shopTitle = document.createElement("h6");
+    shopTitle.className = "fw-bold mb-2";
+    shopTitle.textContent = "🛒 Liste de courses";
+    colShopping.appendChild(shopTitle);
+
+    if (list.shopping && Object.keys(list.shopping).length > 0) {
+      Object.entries(list.shopping).forEach(([cat, items]) => {
+        const catTitle = document.createElement("p");
+        catTitle.className = "fw-semibold mt-2 mb-1 small";
+        catTitle.textContent = cat;
+        colShopping.appendChild(catTitle);
+
+        Object.entries(items).forEach(([name, data]) => {
+          const row2 = document.createElement("div");
+          row2.className = "form-check ms-1";
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.className = "form-check-input";
+
+          const lbl = document.createElement("label");
+          lbl.className = "form-check-label small";
+          lbl.textContent = `${name} : ${Math.round(data.quantity * 100) / 100} ${data.unit}`;
+
+          cb.addEventListener("change", () => {
+            lbl.style.color = cb.checked ? "#bbb" : "";
+            lbl.style.textDecoration = cb.checked ? "line-through" : "";
+          });
+
+          row2.appendChild(cb);
+          row2.appendChild(lbl);
+          colShopping.appendChild(row2);
+        });
+      });
+    } else {
+      colShopping.innerHTML += "<p class='text-muted small'>Aucun ingrédient.</p>";
+    }
+
+    row.appendChild(colRecipes);
+    row.appendChild(colShopping);
+    section.appendChild(row);
     container.appendChild(section);
   });
 }
 
-// Chargement au démarrage
 document.addEventListener("DOMContentLoaded", () => {
   loadSavedLists();
 });
