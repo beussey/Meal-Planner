@@ -376,7 +376,46 @@ selected.forEach((sel, i) => {
 });
 
 });
+// ===== LECTURE DES LISTES SAUVEGARDÉES =====
+app.get("/saved-lists", (req, res) => {
+  const filePath = path.join(__dirname, "data", "saved_lists.json");
+  try {
+    const lists = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    res.json(lists);
+  } catch {
+    res.json([]);
+  }
+});
 
+// ===== SAUVEGARDE D'UNE LISTE =====
+app.post("/save-list", express.json(), (req, res) => {
+  const { recipes } = req.body;
+  if (!recipes || recipes.length === 0) {
+    return res.status(400).json({ error: "Aucune recette sélectionnée" });
+  }
+
+  const filePath = path.join(__dirname, "data", "saved_lists.json");
+  let lists = [];
+  try {
+    lists = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    lists = [];
+  }
+
+  // Purge des listes > 2 semaines
+  const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  lists = lists.filter(l => l.savedAt > twoWeeksAgo);
+
+  // Ajout de la nouvelle liste
+  lists.push({
+    id: Date.now().toString(),
+    savedAt: Date.now(),
+    recipes
+  });
+
+  fs.writeFileSync(filePath, JSON.stringify(lists, null, 2));
+  res.json({ success: true });
+});
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
