@@ -340,4 +340,6 @@ async function loadSavedLists() {
 }
 
 // Chargement au démarrage
-loadSavedLists();
+document.addEventListener("DOMContentLoaded", () => {
+  loadSavedLists();
+});
