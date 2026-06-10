@@ -527,7 +527,45 @@ async function loadSavedLists() {
     container.appendChild(section);
   });
 }
+function rebuildShoppingCol(colShopping, shopping) {
+  // Garde le titre, remplace le reste
+  const title = colShopping.querySelector("h6");
+  colShopping.innerHTML = "";
+  colShopping.appendChild(title);
 
+  if (shopping && Object.keys(shopping).length > 0) {
+    Object.entries(shopping).forEach(([cat, items]) => {
+      const catTitle = document.createElement("p");
+      catTitle.className = "fw-semibold mt-2 mb-1 small";
+      catTitle.textContent = cat;
+      colShopping.appendChild(catTitle);
+
+      Object.entries(items).forEach(([name, data]) => {
+        const row2 = document.createElement("div");
+        row2.className = "form-check ms-1";
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "form-check-input";
+
+        const lbl = document.createElement("label");
+        lbl.className = "form-check-label small";
+        lbl.textContent = `${name} : ${Math.round(data.quantity * 100) / 100} ${data.unit}`;
+
+        cb.addEventListener("change", () => {
+          lbl.style.color = cb.checked ? "#bbb" : "";
+          lbl.style.textDecoration = cb.checked ? "line-through" : "";
+        });
+
+        row2.appendChild(cb);
+        row2.appendChild(lbl);
+        colShopping.appendChild(row2);
+      });
+    });
+  } else {
+    colShopping.innerHTML += "<p class='text-muted small'>Aucun ingrédient.</p>";
+  }
+}
 document.addEventListener("DOMContentLoaded", () => {
   loadSavedLists();
 });
