@@ -12,9 +12,7 @@ async function generateWeek() {
   const data = await response.json();
 
   updateSeasonBadge(data.ignoreSeason);
-
   currentRecipes = data.recipes;
-
   displayRecipes(currentRecipes);
   updateShoppingList();
 }
@@ -31,9 +29,11 @@ function displayRecipes(recipes) {
 
     const cardBody = document.createElement("div");
     cardBody.className = "card-body";
+
     if (r.isForced) {
       card.classList.add("border-warning", "border-3");
     }
+
     // ===== TITLE =====
     const title = document.createElement("h5");
     title.className = "card-title";
@@ -46,7 +46,7 @@ function displayRecipes(recipes) {
     let metaText = `<strong>Temps :</strong> ${r.prep_time} min | <strong>Type :</strong> ${r.category}`;
 
     if (r.isForced) {
-      metaText += ` 
+      metaText += `
         <span class="badge bg-warning text-dark ms-2">
           🟡 Ingrédient à finir
         </span>
@@ -54,7 +54,7 @@ function displayRecipes(recipes) {
     }
 
     if (r.isBatchCooking) {
-      metaText += ` 
+      metaText += `
         <span class="badge bg-success ms-2">
           🍽️ ${r.adjustedServings} portions
         </span>
@@ -63,42 +63,43 @@ function displayRecipes(recipes) {
 
     meta.innerHTML = metaText;
 
-   // ===== CHECKBOX EXCLUSION =====
-const checkboxDiv = document.createElement("div");
-checkboxDiv.className = "form-check mb-2";
+    // ===== CHECKBOX EXCLUSION =====
+    const checkboxDiv = document.createElement("div");
+    checkboxDiv.className = "form-check mb-2";
 
-const excludeCheckbox = document.createElement("input");
-excludeCheckbox.className = "form-check-input";
-excludeCheckbox.type = "checkbox";
-excludeCheckbox.dataset.recipeId = r.id;
+    const excludeCheckbox = document.createElement("input");
+    excludeCheckbox.className = "form-check-input";
+    excludeCheckbox.type = "checkbox";
+    excludeCheckbox.dataset.recipeId = r.id;
 
-const excludeLabel = document.createElement("label");
-excludeLabel.className = "form-check-label";
-excludeLabel.textContent = "Exclure de la liste de courses";
+    const excludeLabel = document.createElement("label");
+    excludeLabel.className = "form-check-label";
+    excludeLabel.textContent = "Exclure de la liste de courses";
 
-excludeCheckbox.addEventListener("change", () => {
-  card.classList.toggle("opacity-50", excludeCheckbox.checked);
-  updateShoppingList();
-});
+    excludeCheckbox.addEventListener("change", () => {
+      card.classList.toggle("opacity-50", excludeCheckbox.checked);
+      updateShoppingList();
+    });
 
-checkboxDiv.appendChild(excludeCheckbox);
-checkboxDiv.appendChild(excludeLabel);
+    checkboxDiv.appendChild(excludeCheckbox);
+    checkboxDiv.appendChild(excludeLabel);
 
-// ===== CHECKBOX SÉLECTION POUR SAUVEGARDE =====
-const saveCheckDiv = document.createElement("div");
-saveCheckDiv.className = "form-check mb-2";
+    // ===== CHECKBOX SÉLECTION POUR SAUVEGARDE =====
+    const saveCheckDiv = document.createElement("div");
+    saveCheckDiv.className = "form-check mb-2";
 
-const saveCheckbox = document.createElement("input");
-saveCheckbox.className = "form-check-input save-recipe-checkbox";
-saveCheckbox.type = "checkbox";
-saveCheckbox.dataset.recipeId = r.id;
+    const saveCheckbox = document.createElement("input");
+    saveCheckbox.className = "form-check-input save-recipe-checkbox";
+    saveCheckbox.type = "checkbox";
+    saveCheckbox.dataset.recipeId = r.id;
 
-const saveLabel = document.createElement("label");
-saveLabel.className = "form-check-label text-success";
-saveLabel.textContent = "✅ Ajouter à ma liste";
+    const saveLabel = document.createElement("label");
+    saveLabel.className = "form-check-label text-success";
+    saveLabel.textContent = "✅ Ajouter à ma liste";
 
-saveCheckDiv.appendChild(saveCheckbox);
-saveCheckDiv.appendChild(saveLabel);
+    saveCheckDiv.appendChild(saveCheckbox);
+    saveCheckDiv.appendChild(saveLabel);
+
     // ===== INGREDIENTS BUTTON =====
     const ingBtn = document.createElement("button");
     ingBtn.className = "btn btn-outline-primary btn-sm me-2";
@@ -109,13 +110,11 @@ saveCheckDiv.appendChild(saveLabel);
 
     if (Array.isArray(r.ingredients)) {
       const ingList = document.createElement("ul");
-
       r.ingredients.forEach(ing => {
         const li = document.createElement("li");
         li.textContent = `${ing.name} : ${Math.round(ing.quantity * 100) / 100} ${ing.unit}`;
         ingList.appendChild(li);
       });
-
       ingContainer.appendChild(ingList);
     }
 
@@ -135,13 +134,11 @@ saveCheckDiv.appendChild(saveLabel);
 
     if (Array.isArray(r.steps)) {
       const stepList = document.createElement("ol");
-
       r.steps.forEach(step => {
         const li = document.createElement("li");
         li.textContent = step;
         stepList.appendChild(li);
       });
-
       stepContainer.appendChild(stepList);
     }
 
@@ -163,14 +160,12 @@ saveCheckDiv.appendChild(saveLabel);
 
     card.appendChild(cardBody);
     container.appendChild(card);
-
   });
 }
-function updateSeasonBadge(ignoreSeason) {
 
+function updateSeasonBadge(ignoreSeason) {
   const existing = document.getElementById("seasonBadge");
   if (existing) existing.remove();
-
   if (!ignoreSeason) return;
 
   const badge = document.createElement("div");
@@ -181,6 +176,7 @@ function updateSeasonBadge(ignoreSeason) {
   const container = document.querySelector(".container");
   container.insertBefore(badge, container.children[1]);
 }
+
 function updateShoppingList() {
   const shopping = {};
 
@@ -196,15 +192,12 @@ function updateShoppingList() {
 
   includedRecipes.forEach(recipe => {
     recipe.ingredients.forEach(ingredient => {
-
       const category =
         typeof ingredient.category === "string"
           ? ingredient.category
           : "🧂 Épicerie";
 
-      if (!shopping[category]) {
-        shopping[category] = {};
-      }
+      if (!shopping[category]) shopping[category] = {};
 
       if (!shopping[category][ingredient.name]) {
         shopping[category][ingredient.name] = {
@@ -225,7 +218,6 @@ function displayShopping(list) {
   container.innerHTML = "";
 
   for (let category in list) {
-
     const categoryTitle = document.createElement("h3");
     categoryTitle.className = "mt-4 border-bottom pb-1";
     categoryTitle.textContent = category;
@@ -234,7 +226,6 @@ function displayShopping(list) {
     const items = list[category];
 
     for (let item in items) {
-
       const data = items[item];
 
       const row = document.createElement("div");
@@ -248,24 +239,18 @@ function displayShopping(list) {
       label.className = "form-check-label";
       label.textContent = `${item} : ${Math.round(data.quantity * 100) / 100} ${data.unit}`;
 
-      // 🎨 effet visuel quand coché
       checkbox.addEventListener("change", () => {
-        if (checkbox.checked) {
-          label.style.color = "#bbb";
-          label.style.textDecoration = "line-through";
-        } else {
-          label.style.color = "";
-          label.style.textDecoration = "";
-        }
+        label.style.color = checkbox.checked ? "#bbb" : "";
+        label.style.textDecoration = checkbox.checked ? "line-through" : "";
       });
 
       row.appendChild(checkbox);
       row.appendChild(label);
-
       container.appendChild(row);
     }
   }
 }
+
 async function saveSelectedRecipes() {
   const checkboxes = document.querySelectorAll(".save-recipe-checkbox:checked");
 
@@ -277,21 +262,16 @@ async function saveSelectedRecipes() {
   const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.recipeId);
   const recipesToSave = currentRecipes.filter(r => selectedIds.includes(r.id));
 
-  // Récupère les listes existantes
   const res = await fetch("/saved-lists");
   let lists = await res.json();
 
   const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
   lists = lists.filter(l => l.savedAt > twoWeeksAgo);
 
-  // Date du jour comme clé (format YYYY-MM-DD)
   const todayKey = new Date().toISOString().slice(0, 10);
-
-  // Cherche une liste du jour existante
   let todayList = lists.find(l => l.dayKey === todayKey);
 
   if (todayList) {
-    // Ajoute sans doublons
     recipesToSave.forEach(r => {
       if (!todayList.recipes.some(existing => existing.id === r.id)) {
         todayList.recipes.push(r);
@@ -307,7 +287,7 @@ async function saveSelectedRecipes() {
     lists.push(todayList);
   }
 
-  // Recalcule la shopping list complète de cette liste
+  // Recalcule la shopping list complète
   const shopping = {};
   todayList.recipes.forEach(recipe => {
     recipe.ingredients.forEach(ing => {
@@ -358,7 +338,6 @@ async function loadSavedLists() {
     header.textContent = `📅 Liste du ${date}`;
     section.appendChild(header);
 
-    // Ligne en deux colonnes : recettes | shopping
     const row = document.createElement("div");
     row.className = "row";
 
@@ -371,95 +350,85 @@ async function loadSavedLists() {
     recipesTitle.textContent = "🍽️ Recettes";
     colRecipes.appendChild(recipesTitle);
 
-   list.recipes.forEach(r => {
-  const toggle = document.createElement("details");
-  toggle.className = "mb-2 border rounded p-2";
+    // ===== COLONNE SHOPPING =====
+    const colShopping = document.createElement("div");
+    colShopping.className = "col-md-5";
 
-  const summary = document.createElement("summary");
-  summary.className = "fw-semibold";
-  summary.textContent = `${r.name} — ${r.prep_time} min`;
-  toggle.appendChild(summary);
+    const shopTitle = document.createElement("h6");
+    shopTitle.className = "fw-bold mb-2";
+    shopTitle.textContent = "🛒 Liste de courses";
+    colShopping.appendChild(shopTitle);
 
-  // ===== CHECKBOX EXCLUSION =====
-  const excludeDiv = document.createElement("div");
-  excludeDiv.className = "form-check mt-2 mb-1";
+    rebuildShoppingCol(colShopping, list.shopping);
 
-  const excludeCb = document.createElement("input");
-  excludeCb.type = "checkbox";
-  excludeCb.className = "form-check-input";
+    list.recipes.forEach(r => {
+      const toggle = document.createElement("details");
+      toggle.className = "mb-2 border rounded p-2";
 
-  const excludeLbl = document.createElement("label");
-  excludeLbl.className = "form-check-label text-danger small";
-  excludeLbl.textContent = "Exclure de la liste de courses";
+      const summary = document.createElement("summary");
+      summary.className = "fw-semibold";
+      summary.textContent = `${r.name} — ${r.prep_time} min`;
+      toggle.appendChild(summary);
 
-  excludeCb.addEventListener("change", () => {
-    // Recalcule la shopping list en excluant les recettes cochées
-    const excludedIds = Array.from(
-      section.querySelectorAll(".exclude-saved-cb:checked")
-    ).map(cb => cb.dataset.recipeId);
+      // ===== CHECKBOX EXCLUSION =====
+      const excludeDiv = document.createElement("div");
+      excludeDiv.className = "form-check mt-2 mb-1";
 
-    const includedRecipes = list.recipes.filter(
-      rec => !excludedIds.includes(rec.id)
-    );
+      const excludeCb = document.createElement("input");
+      excludeCb.type = "checkbox";
+      excludeCb.className = "form-check-input exclude-saved-cb";
+      excludeCb.dataset.recipeId = r.id;
 
-    const newShopping = {};
-    includedRecipes.forEach(rec => {
-      rec.ingredients.forEach(ing => {
-        const cat = ing.category || "🧂 Épicerie";
-        if (!newShopping[cat]) newShopping[cat] = {};
-        if (!newShopping[cat][ing.name]) {
-          newShopping[cat][ing.name] = { quantity: 0, unit: ing.unit };
-        }
-        newShopping[cat][ing.name].quantity += ing.quantity;
+      const excludeLbl = document.createElement("label");
+      excludeLbl.className = "form-check-label text-danger small";
+      excludeLbl.textContent = "Exclure de la liste de courses";
+
+      excludeCb.addEventListener("change", () => {
+        const excludedIds = Array.from(
+          section.querySelectorAll(".exclude-saved-cb:checked")
+        ).map(cb => cb.dataset.recipeId);
+
+        const includedRecipes = list.recipes.filter(
+          rec => !excludedIds.includes(rec.id)
+        );
+
+        const newShopping = {};
+        includedRecipes.forEach(rec => {
+          rec.ingredients.forEach(ing => {
+            const cat = ing.category || "🧂 Épicerie";
+            if (!newShopping[cat]) newShopping[cat] = {};
+            if (!newShopping[cat][ing.name]) {
+              newShopping[cat][ing.name] = { quantity: 0, unit: ing.unit };
+            }
+            newShopping[cat][ing.name].quantity += ing.quantity;
+          });
+        });
+
+        rebuildShoppingCol(colShopping, newShopping);
       });
-    });
 
-    // Redessine uniquement la colonne shopping de cette liste
-    rebuildShoppingCol(colShopping, newShopping);
-  });
+      excludeDiv.appendChild(excludeCb);
+      excludeDiv.appendChild(excludeLbl);
+      toggle.appendChild(excludeDiv);
 
-  excludeCb.className = "form-check-input exclude-saved-cb";
-  excludeCb.dataset.recipeId = r.id;
+      // Ingrédients
+      if (Array.isArray(r.ingredients)) {
+        const ingTitle = document.createElement("p");
+        ingTitle.className = "mt-2 mb-1 text-muted small";
+        ingTitle.textContent = "Ingrédients :";
+        toggle.appendChild(ingTitle);
 
-  excludeDiv.appendChild(excludeCb);
-  excludeDiv.appendChild(excludeLbl);
-  toggle.appendChild(excludeDiv);
+        const ingList = document.createElement("ul");
+        ingList.className = "small";
+        r.ingredients.forEach(ing => {
+          const li = document.createElement("li");
+          li.textContent = `${ing.name} : ${Math.round(ing.quantity * 100) / 100} ${ing.unit}`;
+          ingList.appendChild(li);
+        });
+        toggle.appendChild(ingList);
+      }
 
-  if (Array.isArray(r.ingredients)) {
-    const ingTitle = document.createElement("p");
-    ingTitle.className = "mt-2 mb-1 text-muted small";
-    ingTitle.textContent = "Ingrédients :";
-    toggle.appendChild(ingTitle);
-
-    const ingList = document.createElement("ul");
-    ingList.className = "small";
-    r.ingredients.forEach(ing => {
-      const li = document.createElement("li");
-      li.textContent = `${ing.name} : ${Math.round(ing.quantity * 100) / 100} ${ing.unit}`;
-      ingList.appendChild(li);
-    });
-    toggle.appendChild(ingList);
-  }
-
-  if (Array.isArray(r.steps)) {
-    const stepsTitle = document.createElement("p");
-    stepsTitle.className = "mt-2 mb-1 text-muted small";
-    stepsTitle.textContent = "Préparation :";
-    toggle.appendChild(stepsTitle);
-
-    const ol = document.createElement("ol");
-    ol.className = "small";
-    r.steps.forEach(step => {
-      const li = document.createElement("li");
-      li.textContent = step;
-      ol.appendChild(li);
-    });
-    toggle.appendChild(ol);
-  }
-
-  colRecipes.appendChild(toggle);
-});
-
+      // Étapes
       if (Array.isArray(r.steps)) {
         const stepsTitle = document.createElement("p");
         stepsTitle.className = "mt-2 mb-1 text-muted small";
@@ -479,56 +448,14 @@ async function loadSavedLists() {
       colRecipes.appendChild(toggle);
     });
 
-    // ===== COLONNE SHOPPING =====
-    const colShopping = document.createElement("div");
-    colShopping.className = "col-md-5";
-
-    const shopTitle = document.createElement("h6");
-    shopTitle.className = "fw-bold mb-2";
-    shopTitle.textContent = "🛒 Liste de courses";
-    colShopping.appendChild(shopTitle);
-
-    if (list.shopping && Object.keys(list.shopping).length > 0) {
-      Object.entries(list.shopping).forEach(([cat, items]) => {
-        const catTitle = document.createElement("p");
-        catTitle.className = "fw-semibold mt-2 mb-1 small";
-        catTitle.textContent = cat;
-        colShopping.appendChild(catTitle);
-
-        Object.entries(items).forEach(([name, data]) => {
-          const row2 = document.createElement("div");
-          row2.className = "form-check ms-1";
-
-          const cb = document.createElement("input");
-          cb.type = "checkbox";
-          cb.className = "form-check-input";
-
-          const lbl = document.createElement("label");
-          lbl.className = "form-check-label small";
-          lbl.textContent = `${name} : ${Math.round(data.quantity * 100) / 100} ${data.unit}`;
-
-          cb.addEventListener("change", () => {
-            lbl.style.color = cb.checked ? "#bbb" : "";
-            lbl.style.textDecoration = cb.checked ? "line-through" : "";
-          });
-
-          row2.appendChild(cb);
-          row2.appendChild(lbl);
-          colShopping.appendChild(row2);
-        });
-      });
-    } else {
-      colShopping.innerHTML += "<p class='text-muted small'>Aucun ingrédient.</p>";
-    }
-
     row.appendChild(colRecipes);
     row.appendChild(colShopping);
     section.appendChild(row);
     container.appendChild(section);
   });
 }
+
 function rebuildShoppingCol(colShopping, shopping) {
-  // Garde le titre, remplace le reste
   const title = colShopping.querySelector("h6");
   colShopping.innerHTML = "";
   colShopping.appendChild(title);
@@ -563,9 +490,13 @@ function rebuildShoppingCol(colShopping, shopping) {
       });
     });
   } else {
-    colShopping.innerHTML += "<p class='text-muted small'>Aucun ingrédient.</p>";
+    const empty = document.createElement("p");
+    empty.className = "text-muted small";
+    empty.textContent = "Aucun ingrédient.";
+    colShopping.appendChild(empty);
   }
 }
+
 document.addEventListener("DOMContentLoaded", () => {
   loadSavedLists();
 });
