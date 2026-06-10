@@ -277,10 +277,23 @@ async function saveSelectedRecipes() {
   const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.recipeId);
   const recipesToSave = currentRecipes.filter(r => selectedIds.includes(r.id));
 
+  // Calcul de la shopping list pour ces recettes uniquement
+  const shopping = {};
+  recipesToSave.forEach(recipe => {
+    recipe.ingredients.forEach(ing => {
+      const cat = ing.category || "🧂 Épicerie";
+      if (!shopping[cat]) shopping[cat] = {};
+      if (!shopping[cat][ing.name]) {
+        shopping[cat][ing.name] = { quantity: 0, unit: ing.unit };
+      }
+      shopping[cat][ing.name].quantity += ing.quantity;
+    });
+  });
+
   await fetch("/save-list", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ recipes: recipesToSave })
+    body: JSON.stringify({ recipes: recipesToSave, shopping })
   });
 
   alert(`✅ ${recipesToSave.length} recette(s) sauvegardée(s) !`);
@@ -288,10 +301,12 @@ async function saveSelectedRecipes() {
 }
 
 async function loadSavedLists() {
+  const container = document.getElementById("saved-lists");
+  if (!container) return;
+
   const res = await fetch("/saved-lists");
   const lists = await res.json();
 
-  const container = document.getElementById("saved-lists");
   container.innerHTML = "";
 
   if (lists.length === 0) {
@@ -299,31 +314,99 @@ async function loadSavedLists() {
     return;
   }
 
-  // Plus récent en premier
   [...lists].reverse().forEach(list => {
     const date = new Date(list.savedAt).toLocaleDateString("fr-FR", {
       day: "numeric", month: "long", year: "numeric"
     });
 
     const section = document.createElement("div");
-    section.className = "mb-4 border rounded p-3";
+    section.className = "mb-5 border rounded p-3";
 
+    // Titre
     const header = document.createElement("h5");
     header.textContent = `📅 Liste du ${date}`;
     section.appendChild(header);
 
+    // ===== SHOPPING LIST =====
+    const shopToggle = document.createElement("details");
+    shopToggle.className = "mb-3";
+    const shopSummary = document.createElement("summary");
+    shopSummary.className = "fw-bold text-success mb-2";
+    shopSummary.textContent = "🛒 Liste de courses";
+    shopToggle.appendChild(shopSummary);
+
+    if (list.shopping) {
+      Object.entries(list.shopping).forEach(([cat, items]) => {
+        const catTitle = document.createElement("p");
+        catTitle.className = "fw-semibold mt-2 mb-1";
+        catTitle.textContent = cat;
+        shopToggle.appendChild(catTitle);
+
+        Object.entries(items).forEach(([name, data]) => {
+          const row = document.createElement("div");
+          row.className = "form-check ms-2";
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.className = "form-check-input";
+
+          const lbl = document.createElement("label");
+          lbl.className = "form-check-label";
+          lbl.textContent = `${name} : ${Math.round(data.quantity * 100) / 100} ${data.unit}`;
+
+          cb.addEventListener("change", () => {
+            lbl.style.color = cb.checked ? "#bbb" : "";
+            lbl.style.textDecoration = cb.checked ? "line-through" : "";
+          });
+
+          row.appendChild(cb);
+          row.appendChild(lbl);
+          shopToggle.appendChild(row);
+        });
+      });
+    }
+
+    section.appendChild(shopToggle);
+
+    // ===== RECETTES =====
+    const recipesTitle = document.createElement("p");
+    recipesTitle.className = "fw-bold mt-3 mb-2";
+    recipesTitle.textContent = "🍽️ Recettes";
+    section.appendChild(recipesTitle);
+
     list.recipes.forEach(r => {
       const toggle = document.createElement("details");
-      toggle.className = "mb-2";
+      toggle.className = "mb-2 border rounded p-2";
 
       const summary = document.createElement("summary");
       summary.className = "fw-semibold";
-      summary.textContent = r.name;
+      summary.textContent = `${r.name} — ${r.prep_time} min`;
       toggle.appendChild(summary);
 
+      // Ingrédients de la recette
+      if (Array.isArray(r.ingredients)) {
+        const ingTitle = document.createElement("p");
+        ingTitle.className = "mt-2 mb-1 text-muted";
+        ingTitle.textContent = "Ingrédients :";
+        toggle.appendChild(ingTitle);
+
+        const ingList = document.createElement("ul");
+        r.ingredients.forEach(ing => {
+          const li = document.createElement("li");
+          li.textContent = `${ing.name} : ${Math.round(ing.quantity * 100) / 100} ${ing.unit}`;
+          ingList.appendChild(li);
+        });
+        toggle.appendChild(ingList);
+      }
+
+      // Étapes
       if (Array.isArray(r.steps)) {
+        const stepsTitle = document.createElement("p");
+        stepsTitle.className = "mt-2 mb-1 text-muted";
+        stepsTitle.textContent = "Préparation :";
+        toggle.appendChild(stepsTitle);
+
         const ol = document.createElement("ol");
-        ol.className = "mt-2";
         r.steps.forEach(step => {
           const li = document.createElement("li");
           li.textContent = step;
